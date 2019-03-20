@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="App2.MasterPage">
+    <!-- This grid contains the master view. The colume is set accordning to
+         the screen size and the specified open factor. -->
+    <Grid >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition x:Name="masterColumnDefinition" Width="*"/>
+        </Grid.ColumnDefinitions>
+        <!-- Master view will be placed here. -->
+        <Grid Grid.Column="1" x:Name="masterViewContainer"/>
+    </Grid>
+</ContentPage>

@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="App2.DrawerView">
+             x:Class="App2.TestMasterView"
+             BackgroundColor="White">
   <ContentView.Content>
       <StackLayout>
-            <Label Text="Hello Xamarin.Forms!" />
-            <Button Text="Some button"/>
-        </StackLayout>
+          <Label Text="Hi! I'm the master view!" />
+      </StackLayout>
   </ContentView.Content>
 </ContentView>

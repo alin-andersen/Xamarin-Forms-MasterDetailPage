@@ -10,14 +10,18 @@ namespace App2
         public static double ScreenHeight { get; set; }
         public static double ScreenWidth { get; set; }
 
+        public static MasterDetailPage MasterDetailPage { get; private set; }
+
         public App()
         {
             InitializeComponent();
 
-            MainPage = new MasterDetailPage(
-                new NavigationPage(new APage()), // Master page
-                new DrawerView());              // Detail view
-		}
+            var detailPage = new TestDetailPage();
+            MasterDetailPage = new MasterDetailPage(
+                new TestMasterView(),
+                detailPage);
+            MainPage = new NavigationPage(MasterDetailPage);
+        }
 
 		protected override void OnStart ()
 		{

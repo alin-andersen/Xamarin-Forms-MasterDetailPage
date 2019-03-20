@@ -9,6 +9,37 @@ namespace App2
     /// </summary>
     public class MasterDetailPage : MultiPage<Page>
     {
+        #region IsMasterShown Property
+
+        public static readonly BindableProperty IsMasterShownProperty = BindableProperty.Create(
+            nameof(IsMasterShown),
+            typeof(bool),
+            typeof(MasterDetailPage),
+            false,
+            propertyChanged: OnIsMasterShownPropertyChanged);
+
+        private static void OnIsMasterShownPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var masterPage = (MasterDetailPage)bindable;
+
+            if((bool)newValue)
+            {
+                masterPage.ShowMaster();
+            }
+            else
+            {
+                masterPage.ShowDetail();
+            }
+        }
+
+        public bool IsMasterShown
+        {
+            get => (bool)GetValue(IsMasterShownProperty);
+            set => SetValue(IsMasterShownProperty, value);
+        }
+
+        #endregion
+
         /// <summary>
         /// Grab page.
         /// </summary>
@@ -17,12 +48,12 @@ namespace App2
         /// <summary>
         /// Detail page.
         /// </summary>
-        readonly DetailPage detailPage;
+        readonly MasterPage masterPage;
 
         /// <summary>
         /// Master page.
         /// </summary>
-        readonly Page masterPage;
+        readonly Page detailPage;
 
         /// <summary>
         /// Determines how much of the screen, the detail page takes when opened.
@@ -31,9 +62,17 @@ namespace App2
         readonly double openFactor;
 
         /// <summary>
-        /// Master page shown.
+        /// Side to open the menu.
         /// </summary>
-        bool masterPageShown = true;
+        /// todo: Use this!
+        readonly bool menuOnRightSide;
+
+        /// <summary>
+        /// Current state of the master detail page.
+        /// If true, the detail page is shown.
+        /// If false, the master page is shown (the menu is visible).
+        /// </summary>
+        bool detailPageShown = true;
 
         /// <summary>
         /// Touch threshold for grabbing and opening the drawer.
@@ -60,14 +99,15 @@ namespace App2
         /// </summary>
         /// <param name="masterPage"></param>
         /// <param name="detailView"></param>
-        public MasterDetailPage(Page masterPage, View detailView, double openFactor = 0.8)
+        public MasterDetailPage(View masterView, Page detailPage, double openFactor = 0.8, bool menuOnRightSide = false)
         {
-            // setup pages
-            this.masterPage = new ExtendedNavigationPage(masterPage);
+            // Set pages.
+            masterPage = new MasterPage(masterView);
+            masterPage.MasterViewWidth = App.ScreenWidth * openFactor;
+            masterPage.TranslationX = -(App.ScreenWidth);
+            this.detailPage = detailPage;
             this.openFactor = openFactor;
-
-            detailPage = new DetailPage(detailView, App.ScreenWidth * openFactor);
-            detailPage.TranslationX = -(App.ScreenWidth);
+            this.menuOnRightSide = menuOnRightSide;
 
             grabPage = new GrabPage()
             {
@@ -76,13 +116,26 @@ namespace App2
             };
             grabPage.TranslationX = -(App.ScreenWidth) + touchThreshold;
 
-            // add pages to multi page
-            Children.Add(masterPage);
+            // Add pages to the multi page.
             Children.Add(detailPage);
+            Children.Add(masterPage);
             Children.Add(grabPage);
+            CurrentPage = detailPage;
 
-            // wire event
+            // Lastly subscribe to events.
+
+            // Subscribe to touch events.
             grabPage.GrabEvent += OnGrabEvent;
+        }
+
+        /// <summary>
+        /// Called when the navigation page raises pushed or popped event.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void OnNavigationPagePushedOrPopped(object sender, NavigationEventArgs e)
+        {
+            IsMasterShown = false;
         }
 
         /// <summary>
@@ -90,7 +143,7 @@ namespace App2
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnGrabEvent(object sender, GrabEventArgs e)
+        void OnGrabEvent(object sender, GrabEventArgs e)
         {
             double clippedTranslation = Clip(
                 -(App.ScreenWidth) + App.ScreenWidth / 2 + e.Translation,
@@ -99,31 +152,31 @@ namespace App2
 
             if(e.TouchUp)
             {
-                if (masterPageShown)
+                if (detailPageShown)
                 {
                     if (e.Translation >= -(App.ScreenWidth / 5.0))
                     {
-                        ShowDetail();
+                        IsMasterShown = true;
                     }
                     else
                     {
-                        ShowMaster();
+                        IsMasterShown = false;
                     }
                 }
                 else
                 {
                     if (e.Translation < App.ScreenWidth / 4.0)
                     {
-                        ShowMaster();
+                        IsMasterShown = false;
                     }
                     else
                     {
-                        ShowDetail();
+                        IsMasterShown = true;
                     }
                 }
             }
 
-            detailPage.TranslationX = clippedTranslation;
+            masterPage.TranslationX = clippedTranslation;
         }
 
         private double Clip(double value, double min, double max)
@@ -136,61 +189,49 @@ namespace App2
         }
 
         /// <summary>
-        /// Show master.
-        /// </summary>
-        void ShowMaster()
-        {
-            lock (internalLock)
-            {
-                masterPageShown = true;
-
-                grabPage.TranslationX = -(App.ScreenWidth) + touchThreshold;
-
-                //detailPage.TranslationX = -(App.ScreenWidth);
-                closeAnimation = new Animation(
-                    (value) => { detailPage.TranslationX = value; },
-                    detailPage.TranslationX,
-                    -(App.ScreenWidth));
-
-                // Abort running animation and commit close animation.
-                detailPage.AbortAnimation("a");
-                closeAnimation.Commit(detailPage, "a", 16, 200, Easing.CubicOut);
-            }
-        }
-
-        /// <summary>
         /// Show detail.
         /// </summary>
         void ShowDetail()
         {
             lock (internalLock)
             {
-                masterPageShown = false;
+                detailPageShown = true;
+
+                grabPage.TranslationX = -(App.ScreenWidth) + touchThreshold;
+
+                //detailPage.TranslationX = -(App.ScreenWidth);
+                closeAnimation = new Animation(
+                    (value) => { masterPage.TranslationX = value; },
+                    masterPage.TranslationX,
+                    -(App.ScreenWidth));
+
+                // Abort running animation and commit close animation.
+                masterPage.AbortAnimation("a");
+                masterPage.Animate("a", closeAnimation, 16, 200, Easing.CubicOut);
+            }
+        }
+
+        /// <summary>
+        /// Show master.
+        /// </summary>
+        void ShowMaster()
+        {
+            lock (internalLock)
+            {
+                detailPageShown = false;
 
                 grabPage.TranslationX = App.ScreenWidth - App.ScreenWidth * (1.0 - openFactor) - touchThreshold;
 
                 //detailPage.TranslationX = -App.ScreenWidth + App.ScreenWidth * openFactor;
                 openAnimation = new Animation(
-                    (value) => { detailPage.TranslationX = value; },
-                    detailPage.TranslationX,
+                    (value) => { masterPage.TranslationX = value; },
+                    masterPage.TranslationX,
                     -App.ScreenWidth + App.ScreenWidth * openFactor,
-                    Easing.SpringOut);
+                    Easing.CubicOut);
 
                 // Abort running animation and commit open animation.
-                detailPage.AbortAnimation("a");
-                detailPage.Animate("a", openAnimation, 16, 200);
-            }
-        }
-
-        /// <summary>
-        /// Toggle menu.
-        /// </summary>
-        public void ToggleMenu()
-        {
-            lock (internalLock)
-            {
-                if (masterPageShown) ShowDetail();
-                else ShowMaster();
+                masterPage.AbortAnimation("a");
+                masterPage.Animate("a", openAnimation, 16, 200);
             }
         }
 

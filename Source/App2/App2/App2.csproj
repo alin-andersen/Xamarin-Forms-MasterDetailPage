@@ -9,13 +9,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="APage.xaml">
+    <Compile Update="MasterPage.xaml.cs">
+      <DependentUpon>MasterPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="TestMasterView.xaml.cs">
+      <DependentUpon>TestMasterView.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="TestDetailPage.xaml.cs">
+      <DependentUpon>TestDetailPage.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="TestDetailPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Update="DetailPage.xaml">
+    <EmbeddedResource Update="MasterPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Update="DrawerView.xaml">
+    <EmbeddedResource Update="TestMasterView.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="GrabPage.xaml">
