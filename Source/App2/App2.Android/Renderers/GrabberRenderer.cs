@@ -75,7 +75,8 @@ namespace App2.Droid.Renderers
         /// <returns></returns>
         public bool OnTouch(Android.Views.View v, MotionEvent e)
         {
-            double currentTouchedLocation = TranslateToMid(e.RawX / displayMetrics.Density);
+            double currentTouchedLocation = TranslateToMid(e.RawX) / displayMetrics.Density;
+
 
             switch (e.Action)
             {
@@ -124,20 +125,23 @@ namespace App2.Droid.Renderers
         /// <returns></returns>
         double TranslateToMid(double value)
         {
-            double halfWidth = App.ScreenWidth / 2.0;
+            double halfWidth = displayMetrics.WidthPixels / 2.0;
+
+            double translatedToMidPosition = 0.0;
 
             if (value < halfWidth)
             {
-                return -(halfWidth - value);
+                translatedToMidPosition = - (halfWidth - value);
             }
             else if(value > halfWidth)
             {
-                return value - halfWidth;
+                translatedToMidPosition = value - halfWidth;
             }
-            else
-            {
-                return 0.0;
-            }
+
+            System.Diagnostics.Debug.WriteLine($"Current raw location:        {value}");
+            System.Diagnostics.Debug.WriteLine($"Current translated location: {translatedToMidPosition}");
+
+            return translatedToMidPosition;
         }
 
         /// <summary>

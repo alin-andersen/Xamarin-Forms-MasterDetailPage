@@ -1,4 +1,5 @@
 ﻿
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
@@ -33,6 +34,11 @@ namespace App2
         public ICommand OnPopCommand { get; }
 
         /// <summary>
+        /// Show loader command.
+        /// </summary>
+        public ICommand OnShowLoader { get; }
+
+        /// <summary>
         /// Default constructor.
         /// </summary>
         public TestDetailViewModel()
@@ -45,13 +51,25 @@ namespace App2
 
             OnOpenOtherPageCommand = new Command(async () =>
             {
-                await ((NavigationPage)Application.Current.MainPage).PushAsync(new TestDetailPage());
+                await ((NavigationPage)GetMasterDetailPage().DetailPage).PushAsync(new TestDetailPage());
             });
 
             OnPopCommand = new Command(async () =>
             {
-                await ((NavigationPage)Application.Current.MainPage).PopAsync();
+                await ((NavigationPage)GetMasterDetailPage().DetailPage).PopAsync();
             });
+
+            OnShowLoader = new Command(async () =>
+            {
+                GetMasterDetailPage().IsBusy = true;
+                await Task.Delay(3000);
+                GetMasterDetailPage().IsBusy = false;
+            });
+        }
+
+        MasterDetailPage GetMasterDetailPage()
+        {
+            return (MasterDetailPage)Application.Current.MainPage;
         }
     }
 }

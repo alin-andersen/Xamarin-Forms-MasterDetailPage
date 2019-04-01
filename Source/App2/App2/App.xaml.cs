@@ -16,11 +16,13 @@ namespace App2
         {
             InitializeComponent();
 
-            var detailPage = new TestDetailPage();
+            // Create MasterDetailPage
             MasterDetailPage = new MasterDetailPage(
                 new TestMasterView(),
-                detailPage);
-            MainPage = new NavigationPage(MasterDetailPage);
+                new NavigationPage(new TestDetailPage()),
+                new LoaderPage());
+
+            MainPage = MasterDetailPage;
         }
 
 		protected override void OnStart ()

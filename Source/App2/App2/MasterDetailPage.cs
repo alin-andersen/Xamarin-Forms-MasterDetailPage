@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using Xamarin.Forms;
 
@@ -53,7 +54,12 @@ namespace App2
         /// <summary>
         /// Master page.
         /// </summary>
-        readonly Page detailPage;
+        public readonly Page DetailPage;
+
+        /// <summary>
+        /// Loader page.
+        /// </summary>
+        readonly Page loaderPage;
 
         /// <summary>
         /// Determines how much of the screen, the detail page takes when opened.
@@ -80,14 +86,10 @@ namespace App2
         double touchThreshold = 22.0;
 
         /// <summary>
-        /// Animation for opening the drawer menu.
+        /// How much the master page has to be moved in order to 
+        /// toggle when released.
         /// </summary>
-        Animation openAnimation;
-
-        /// <summary>
-        /// Animation for closing the drawer menu.
-        /// </summary>
-        Animation closeAnimation;
+        double decisionFactor = 0.25;
 
         /// <summary>
         /// Internal lock.
@@ -99,33 +101,61 @@ namespace App2
         /// </summary>
         /// <param name="masterPage"></param>
         /// <param name="detailView"></param>
-        public MasterDetailPage(View masterView, Page detailPage, double openFactor = 0.8, bool menuOnRightSide = false)
+        public MasterDetailPage(View masterView, Page detailPage, Page loaderPage, double openFactor = 0.8, bool menuOnRightSide = false)
         {
-            // Set pages.
+            // Setup master page.
             masterPage = new MasterPage(masterView);
             masterPage.MasterViewWidth = App.ScreenWidth * openFactor;
-            masterPage.TranslationX = -(App.ScreenWidth);
-            this.detailPage = detailPage;
+            masterPage.TranslationX = menuOnRightSide ? App.ScreenWidth : -(App.ScreenWidth);
+            masterPage.BackgroundColor = masterView.BackgroundColor;
+
+            // Copy arguments.
+            this.DetailPage = detailPage;
+            this.loaderPage = loaderPage;
+            HideLoader();
+
             this.openFactor = openFactor;
             this.menuOnRightSide = menuOnRightSide;
 
+            // Setup grab page.
             grabPage = new GrabPage()
             {
                 // Note: Uncomment this to see and understand the grab page.
-                //BackgroundColor = new Color(1.0, 0.0, 0.0, 0.2),
+                BackgroundColor = new Color(1.0, 0.0, 0.0, 0.2),
+                TranslationX = menuOnRightSide ? + App.ScreenWidth - touchThreshold : - App.ScreenWidth + touchThreshold,
             };
-            grabPage.TranslationX = -(App.ScreenWidth) + touchThreshold;
 
-            // Add pages to the multi page.
+            // Add pages to the multi-page (order matters!).
             Children.Add(detailPage);
             Children.Add(masterPage);
             Children.Add(grabPage);
+            Children.Add(loaderPage);
+
             CurrentPage = detailPage;
 
-            // Lastly subscribe to events.
-
             // Subscribe to touch events.
+            PropertyChanged += OnPropertyChangedEventHandler;
             grabPage.GrabEvent += OnGrabEvent;
+        }
+
+        /// <summary>
+        /// Called when property changed fires.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnPropertyChangedEventHandler(object sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == nameof(IsBusy))
+            {
+                if(IsBusy)
+                {
+                    ShowLoader();
+                }
+                else
+                {
+                    HideLoader();
+                }
+            }
         }
 
         /// <summary>
@@ -145,48 +175,65 @@ namespace App2
         /// <param name="e"></param>
         void OnGrabEvent(object sender, GrabEventArgs e)
         {
-            double clippedTranslation = Clip(
-                -(App.ScreenWidth) + App.ScreenWidth / 2 + e.Translation,
-                -App.ScreenWidth,
-                -App.ScreenWidth + App.ScreenWidth * openFactor);
+            // Get clipped translation.
+            var clippedTranslation = GetClippedTranslation(e.Translation);
 
+            // Get translated to master page anchor translation value.
+            var translatedToMasterPageAnchor = clippedTranslation - App.ScreenWidth / 2.0;
+
+            // Check if released event fired.
             if(e.TouchUp)
             {
                 if (detailPageShown)
                 {
-                    if (e.Translation >= -(App.ScreenWidth / 5.0))
-                    {
-                        IsMasterShown = true;
-                    }
-                    else
-                    {
-                        IsMasterShown = false;
-                    }
+                    IsMasterShown = ShouldOpen(translatedToMasterPageAnchor);
                 }
                 else
                 {
-                    if (e.Translation < App.ScreenWidth / 4.0)
-                    {
-                        IsMasterShown = false;
-                    }
-                    else
-                    {
-                        IsMasterShown = true;
-                    }
+                    IsMasterShown = !ShouldClose(translatedToMasterPageAnchor);
                 }
             }
-
-            masterPage.TranslationX = clippedTranslation;
+            else
+            {
+                masterPage.TranslationX = translatedToMasterPageAnchor;
+            }
         }
 
-        private double Clip(double value, double min, double max)
+        /// <summary>
+        /// Get clipped translation value.
+        /// </summary>
+        /// <param name="translation"></param>
+        /// <returns></returns>
+        double GetClippedTranslation(double translation)
         {
-            if (value < min)
-                return min;
-            if (value > max)
-                return max;
+            return Clip(translation, -
+                App.ScreenWidth / 2.0, // Min value.
+                App.ScreenWidth * openFactor - App.ScreenWidth / 2.0); // Max value.
+        }
+
+        /// <summary>
+        /// Simple clip method.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        double Clip(double value, double min, double max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
             return value;
         }
+
+        /// <summary>
+        /// Animation for opening the drawer menu.
+        /// </summary>
+        Animation openAnimation;
+
+        /// <summary>
+        /// Animation for closing the drawer menu.
+        /// </summary>
+        Animation closeAnimation;
 
         /// <summary>
         /// Show detail.
@@ -203,7 +250,7 @@ namespace App2
                 closeAnimation = new Animation(
                     (value) => { masterPage.TranslationX = value; },
                     masterPage.TranslationX,
-                    -(App.ScreenWidth));
+                    GetClosedMasterTranslation());
 
                 // Abort running animation and commit close animation.
                 masterPage.AbortAnimation("a");
@@ -226,14 +273,107 @@ namespace App2
                 openAnimation = new Animation(
                     (value) => { masterPage.TranslationX = value; },
                     masterPage.TranslationX,
-                    -App.ScreenWidth + App.ScreenWidth * openFactor,
-                    Easing.CubicOut);
+                    GetOpenedMasterTranslation(),
+                    Easing.SpringOut);
 
                 // Abort running animation and commit open animation.
                 masterPage.AbortAnimation("a");
                 masterPage.Animate("a", openAnimation, 16, 200);
             }
         }
+
+        /// <summary>
+        /// Show loader.
+        /// </summary>
+        void ShowLoader()
+        {
+            lock (internalLock)
+            {
+                if(loaderPage != null)
+                    loaderPage.TranslationX = 0;
+            }
+        }
+
+        /// <summary>
+        /// Hide loader.
+        /// </summary>
+        void HideLoader()
+        {
+            lock (internalLock)
+            {
+                if (loaderPage != null)
+                    loaderPage.TranslationX = App.ScreenWidth + 100.0;
+            }
+        }
+
+        #region Helper methods
+
+        /// <summary>
+        /// Get opened master translation.
+        /// </summary>
+        /// <returns></returns>
+        double GetOpenedMasterTranslation()
+        {
+            return menuOnRightSide ? 
+                + (App.ScreenWidth / 2.0) - App.ScreenWidth * openFactor + (App.ScreenWidth / 2.0) : 
+                - (App.ScreenWidth / 2.0) + App.ScreenWidth * openFactor - (App.ScreenWidth / 2.0);
+        }
+
+        /// <summary>
+        /// Get closed master translation.
+        /// </summary>
+        /// <returns></returns>
+        double GetClosedMasterTranslation()
+        {
+            return menuOnRightSide ? 
+                +(App.ScreenWidth) : 
+                -(App.ScreenWidth);
+        }
+
+        /// <summary>
+        /// Decides if should open.
+        /// </summary>
+        /// <param name="translationValue"></param>
+        /// <returns></returns>
+        bool ShouldOpen(double translationValue)
+        {
+            if(!menuOnRightSide)
+            {
+                return -(App.ScreenWidth / 2.0) + GetMasterOpenWidth() * decisionFactor >= translationValue;
+            }
+            else
+            {
+                return +(App.ScreenWidth / 2.0) - GetMasterOpenWidth() * decisionFactor <= translationValue;
+            }
+        }
+
+        /// <summary>
+        /// Decides if should close.
+        /// </summary>
+        /// <param name="translationValue"></param>
+        /// <returns></returns>
+        bool ShouldClose(double translationValue)
+        {
+            if (!menuOnRightSide)
+            {
+                return -(App.ScreenWidth / 2.0) + GetMasterOpenWidth() * (1.0 - decisionFactor) >= translationValue;
+            }
+            else
+            {
+                return +(App.ScreenWidth / 2.0) - GetMasterOpenWidth() * (1.0 - decisionFactor) <= translationValue;
+            }
+        }
+
+        /// <summary>
+        /// Get master view open width.
+        /// </summary>
+        /// <returns></returns>
+        double GetMasterOpenWidth()
+        {
+            return App.ScreenWidth * openFactor;
+        }
+
+        #endregion
 
         protected override Page CreateDefault(object item)
         {

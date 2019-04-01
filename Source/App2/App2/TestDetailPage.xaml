@@ -15,7 +15,6 @@
                     Command="{Binding OnShowMasterCommand}"
                     HorizontalOptions="CenterAndExpand"/>
 
-            <!--
             <Button TextColor="White" 
                     Text="Open new page" 
                     Command="{Binding OnOpenOtherPageCommand}"
@@ -24,7 +23,12 @@
             <Button TextColor="White" 
                     Text="Back" 
                     Command="{Binding OnPopCommand}"
-                    HorizontalOptions="CenterAndExpand"/>-->
+                    HorizontalOptions="CenterAndExpand"/>
+
+            <Button TextColor="White" 
+                    Text="Show loader for 3 seconds ..." 
+                    Command="{Binding OnShowLoader}"
+                    HorizontalOptions="CenterAndExpand"/>
 
         </StackLayout>
     </ContentPage.Content>

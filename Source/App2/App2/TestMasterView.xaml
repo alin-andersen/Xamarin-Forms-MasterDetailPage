@@ -6,6 +6,17 @@
   <ContentView.Content>
       <StackLayout>
           <Label Text="Hi! I'm the master view!" />
-      </StackLayout>
+
+            <Button TextColor="White" 
+                    Text="Show detail" 
+                    Command="{Binding OnShowDetailCommand}"
+                    HorizontalOptions="CenterAndExpand"/>
+          
+            <Button TextColor="White" 
+                    Text="Show loader for 3 seconds ..." 
+                    Command="{Binding OnShowLoader}"
+                    HorizontalOptions="CenterAndExpand"/>
+          
+        </StackLayout>
   </ContentView.Content>
 </ContentView>
