@@ -2,9 +2,10 @@
 Alternative implementation for MasterDetailPage. Useable, but still in development.
 Not tested on iOS (because I don't have any Apple machines).
 
-[![Video](https://youtu.be/qZnLBFQaB0M)](https://youtu.be/qZnLBFQaB0M)
+# Video showcase
+[![Video](https://youtu.be/IbdJXpEyTdo)](https://youtu.be/IbdJXpEyTdo)
 
 # Milestones
-- [ ] IsBusy and custom loader support
+- [X] IsBusy and custom loader support
 - [ ] Right side support
 - [ ] Screen orientation support
