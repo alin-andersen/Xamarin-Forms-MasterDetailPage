@@ -33,6 +33,9 @@ namespace App2
         /// </summary>
         public ICommand OnPopCommand { get; }
 
+
+        public ICommand OnToggleSideCommand { get; }
+
         /// <summary>
         /// Show loader command.
         /// </summary>
@@ -64,6 +67,11 @@ namespace App2
                 GetMasterDetailPage().IsBusy = true;
                 await Task.Delay(3000);
                 GetMasterDetailPage().IsBusy = false;
+            });
+
+            OnToggleSideCommand = new Command(() =>
+            {
+                GetMasterDetailPage().IsRightAligned = !GetMasterDetailPage().IsRightAligned;
             });
         }
 

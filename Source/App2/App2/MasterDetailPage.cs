@@ -19,7 +19,7 @@ namespace App2
             false,
             propertyChanged: OnIsMasterShownPropertyChanged);
 
-        private static void OnIsMasterShownPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        static void OnIsMasterShownPropertyChanged(BindableObject bindable, object oldValue, object newValue)
         {
             var masterPage = (MasterDetailPage)bindable;
 
@@ -41,10 +41,33 @@ namespace App2
 
         #endregion
 
+        #region IsRightAlignedProperty
+
+        public static readonly BindableProperty IsRightAlignedProperty = BindableProperty.Create(
+            nameof(IsRightAligned),
+            typeof(bool),
+            typeof(MasterDetailPage),
+            false,
+            propertyChanged: OnIsRightAlignedPropertyChanged);
+
+        static void OnIsRightAlignedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var masterPage = (MasterDetailPage)bindable;
+            masterPage.Update();
+        }
+
+        public bool IsRightAligned
+        {
+            get => (bool)GetValue(IsRightAlignedProperty);
+            set => SetValue(IsRightAlignedProperty, value);
+        }
+
+        #endregion
+
         /// <summary>
         /// Grab page.
         /// </summary>
-        readonly GrabPage grabPage;
+        readonly GrabPage grabPage = new GrabPage();
 
         /// <summary>
         /// Detail page.
@@ -68,28 +91,15 @@ namespace App2
         readonly double openFactor;
 
         /// <summary>
-        /// Side to open the menu.
-        /// </summary>
-        /// todo: Use this!
-        readonly bool menuOnRightSide;
-
-        /// <summary>
-        /// Current state of the master detail page.
-        /// If true, the detail page is shown.
-        /// If false, the master page is shown (the menu is visible).
-        /// </summary>
-        bool detailPageShown = true;
-
-        /// <summary>
         /// Touch threshold for grabbing and opening the drawer.
         /// </summary>
-        double touchThreshold = 22.0;
+        readonly double touchThreshold = 22.0;
 
         /// <summary>
         /// How much the master page has to be moved in order to 
         /// toggle when released.
         /// </summary>
-        double decisionFactor = 0.25;
+        readonly double decisionFactor = 0.25;
 
         /// <summary>
         /// Internal lock.
@@ -101,29 +111,18 @@ namespace App2
         /// </summary>
         /// <param name="masterPage"></param>
         /// <param name="detailView"></param>
-        public MasterDetailPage(View masterView, Page detailPage, Page loaderPage, double openFactor = 0.8, bool menuOnRightSide = false)
+        public MasterDetailPage(View masterView, Page detailPage, Page loaderPage, double openFactor = 0.8)
         {
             // Setup master page.
             masterPage = new MasterPage(masterView);
             masterPage.MasterViewWidth = App.ScreenWidth * openFactor;
-            masterPage.TranslationX = menuOnRightSide ? App.ScreenWidth : -(App.ScreenWidth);
             masterPage.BackgroundColor = masterView.BackgroundColor;
 
-            // Copy arguments.
-            this.DetailPage = detailPage;
+            DetailPage = detailPage;
             this.loaderPage = loaderPage;
             HideLoader();
-
             this.openFactor = openFactor;
-            this.menuOnRightSide = menuOnRightSide;
-
-            // Setup grab page.
-            grabPage = new GrabPage()
-            {
-                // Note: Uncomment this to see and understand the grab page.
-                BackgroundColor = new Color(1.0, 0.0, 0.0, 0.2),
-                TranslationX = menuOnRightSide ? + App.ScreenWidth - touchThreshold : - App.ScreenWidth + touchThreshold,
-            };
+            grabPage.BackgroundColor = new Color(1.0, 0.0, 0.0, 0.2);
 
             // Add pages to the multi-page (order matters!).
             Children.Add(detailPage);
@@ -136,6 +135,9 @@ namespace App2
             // Subscribe to touch events.
             PropertyChanged += OnPropertyChangedEventHandler;
             grabPage.GrabEvent += OnGrabEvent;
+
+            // Update master detail page.
+            Update();
         }
 
         /// <summary>
@@ -159,71 +161,61 @@ namespace App2
         }
 
         /// <summary>
-        /// Called when the navigation page raises pushed or popped event.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void OnNavigationPagePushedOrPopped(object sender, NavigationEventArgs e)
-        {
-            IsMasterShown = false;
-        }
-
-        /// <summary>
         /// On grab event.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void OnGrabEvent(object sender, GrabEventArgs e)
         {
-            // Get clipped translation.
-            var clippedTranslation = GetClippedTranslation(e.Translation);
+            // Get anchor based translation value.
+            var anchorTranslation = GetAnchorBasedValue(e.Translation);
+            Debug.WriteLine($"Anchor translation: {anchorTranslation}");
 
-            // Get translated to master page anchor translation value.
-            var translatedToMasterPageAnchor = clippedTranslation - App.ScreenWidth / 2.0;
+            // Get translation x value.
+            var translationX = GetXTranslationValue(e.Translation);
+            Debug.WriteLine($"translation X: {translationX}");
 
-            // Check if released event fired.
             if(e.TouchUp)
             {
-                if (detailPageShown)
+                var shouldOpen = ShouldOpen(translationX);
+
+                if(IsMasterShown == shouldOpen)
                 {
-                    IsMasterShown = ShouldOpen(translatedToMasterPageAnchor);
+                    if (shouldOpen)
+                        ShowMaster();
+                    else
+                        ShowDetail();
                 }
                 else
                 {
-                    IsMasterShown = !ShouldClose(translatedToMasterPageAnchor);
+                    IsMasterShown = shouldOpen;
                 }
             }
             else
             {
-                masterPage.TranslationX = translatedToMasterPageAnchor;
+                // Get clipped translation value.
+                var clippedTranslation = GetClippedTranslation(anchorTranslation);
+                Debug.WriteLine($"Clipped translation: {clippedTranslation}");
+
+                masterPage.TranslationX = clippedTranslation;
             }
         }
 
-        /// <summary>
-        /// Get clipped translation value.
-        /// </summary>
-        /// <param name="translation"></param>
-        /// <returns></returns>
-        double GetClippedTranslation(double translation)
+        bool ShouldOpen(double translation)
         {
-            return Clip(translation, -
-                App.ScreenWidth / 2.0, // Min value.
-                App.ScreenWidth * openFactor - App.ScreenWidth / 2.0); // Max value.
+            var distanceToOpened = Math.Abs(translation - GetOpenedMasterPageTranslation());
+            var distanceToClosed = Math.Abs(translation - GetClosedMasterPageTranslation());
+
+            if (distanceToOpened <= 2 * touchThreshold)
+                return true;
+
+            if (distanceToClosed <= 2 * touchThreshold)
+                return false;
+
+            return !IsMasterShown;
         }
 
-        /// <summary>
-        /// Simple clip method.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="min"></param>
-        /// <param name="max"></param>
-        /// <returns></returns>
-        double Clip(double value, double min, double max)
-        {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
-        }
+        #region Show/hide master
 
         /// <summary>
         /// Animation for opening the drawer menu.
@@ -242,15 +234,14 @@ namespace App2
         {
             lock (internalLock)
             {
-                detailPageShown = true;
-
-                grabPage.TranslationX = -(App.ScreenWidth) + touchThreshold;
+                // Set x translation of grab page.
+                grabPage.TranslationX = GetClosedGrabPageTranslation();
 
                 //detailPage.TranslationX = -(App.ScreenWidth);
                 closeAnimation = new Animation(
                     (value) => { masterPage.TranslationX = value; },
                     masterPage.TranslationX,
-                    GetClosedMasterTranslation());
+                    GetClosedMasterPageTranslation());
 
                 // Abort running animation and commit close animation.
                 masterPage.AbortAnimation("a");
@@ -265,15 +256,14 @@ namespace App2
         {
             lock (internalLock)
             {
-                detailPageShown = false;
-
-                grabPage.TranslationX = App.ScreenWidth - App.ScreenWidth * (1.0 - openFactor) - touchThreshold;
+                // Set x translation of grab page.
+                grabPage.TranslationX = GetOpenedGrabPageTranslation();
 
                 //detailPage.TranslationX = -App.ScreenWidth + App.ScreenWidth * openFactor;
                 openAnimation = new Animation(
                     (value) => { masterPage.TranslationX = value; },
                     masterPage.TranslationX,
-                    GetOpenedMasterTranslation(),
+                    GetOpenedMasterPageTranslation(),
                     Easing.SpringOut);
 
                 // Abort running animation and commit open animation.
@@ -281,6 +271,10 @@ namespace App2
                 masterPage.Animate("a", openAnimation, 16, 200);
             }
         }
+
+        #endregion
+
+        #region Loader methods
 
         /// <summary>
         /// Show loader.
@@ -306,74 +300,166 @@ namespace App2
             }
         }
 
-        #region Helper methods
+        #endregion
+
+        #region Position helper methods
+
+        /// <summary>
+        /// Get clipped translation value.
+        /// </summary>
+        /// <param name="translation"></param>
+        /// <returns></returns>
+        double GetClippedTranslation(double translation)
+        {
+            if(IsRightAligned)
+            {
+                return Clip(
+                        translation,
+                        GetOpenedMasterPageTranslation(),  // Max value.
+                        GetClosedMasterPageTranslation()); // Min value.
+            }
+            else
+            {
+                return Clip(
+                        translation,
+                        GetClosedMasterPageTranslation(),  // Min value.
+                        GetOpenedMasterPageTranslation()); // Max value.
+            }
+        }
+
+        /// <summary>
+        /// Simple clip method.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        double Clip(double value, double min, double max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
+
+        /// <summary>
+        /// Get x translation value.
+        /// </summary>
+        /// <param name="translation"></param>
+        /// <returns></returns>
+        double GetXTranslationValue(double translation)
+        {
+            if (IsRightAligned)
+            {
+                return translation + App.ScreenWidth / 2.0;
+            }
+            else
+            {
+                return translation - App.ScreenWidth / 2.0;
+            }
+        }
+
+        /// <summary>
+        /// Get anchor based value.
+        /// </summary>
+        /// <param name="translation"></param>
+        /// <returns></returns>
+        double GetAnchorBasedValue(double translation)
+        {
+            if(IsRightAligned)
+            {
+                return translation + (App.ScreenWidth / 2.0);
+            }
+            else
+            {
+                return translation - (App.ScreenWidth / 2.0);
+            }
+        }
 
         /// <summary>
         /// Get opened master translation.
         /// </summary>
         /// <returns></returns>
-        double GetOpenedMasterTranslation()
+        double GetOpenedMasterPageTranslation()
         {
-            return menuOnRightSide ? 
-                + (App.ScreenWidth / 2.0) - App.ScreenWidth * openFactor + (App.ScreenWidth / 2.0) : 
-                - (App.ScreenWidth / 2.0) + App.ScreenWidth * openFactor - (App.ScreenWidth / 2.0);
+            if (IsRightAligned)
+            {
+                return  App.ScreenWidth - App.ScreenWidth * openFactor;
+            }
+            else
+            {
+                return -App.ScreenWidth + App.ScreenWidth * openFactor;
+            }
+        }
+
+        /// <summary>
+        /// Get opened master translation.
+        /// </summary>
+        /// <returns></returns>
+        double GetOpenedGrabPageTranslation()
+        {
+            if (IsRightAligned)
+            {
+                return -(App.ScreenWidth) + App.ScreenWidth * (1.0 - openFactor) + touchThreshold;
+            }
+            else
+            {
+                return (App.ScreenWidth) - App.ScreenWidth * (1.0 - openFactor) - touchThreshold;
+            }
         }
 
         /// <summary>
         /// Get closed master translation.
         /// </summary>
         /// <returns></returns>
-        double GetClosedMasterTranslation()
+        double GetClosedMasterPageTranslation()
         {
-            return menuOnRightSide ? 
-                +(App.ScreenWidth) : 
-                -(App.ScreenWidth);
-        }
-
-        /// <summary>
-        /// Decides if should open.
-        /// </summary>
-        /// <param name="translationValue"></param>
-        /// <returns></returns>
-        bool ShouldOpen(double translationValue)
-        {
-            if(!menuOnRightSide)
+            if (IsRightAligned)
             {
-                return -(App.ScreenWidth / 2.0) + GetMasterOpenWidth() * decisionFactor >= translationValue;
+                return +(App.ScreenWidth);
             }
             else
             {
-                return +(App.ScreenWidth / 2.0) - GetMasterOpenWidth() * decisionFactor <= translationValue;
+                return -(App.ScreenWidth);
             }
         }
 
         /// <summary>
-        /// Decides if should close.
+        /// Get closed master translation.
         /// </summary>
-        /// <param name="translationValue"></param>
         /// <returns></returns>
-        bool ShouldClose(double translationValue)
+        double GetClosedGrabPageTranslation()
         {
-            if (!menuOnRightSide)
+            if (IsRightAligned)
             {
-                return -(App.ScreenWidth / 2.0) + GetMasterOpenWidth() * (1.0 - decisionFactor) >= translationValue;
+                return GetClosedMasterPageTranslation() - touchThreshold;
             }
             else
             {
-                return +(App.ScreenWidth / 2.0) - GetMasterOpenWidth() * (1.0 - decisionFactor) <= translationValue;
+                return GetClosedMasterPageTranslation() + touchThreshold;
             }
-        }
-
-        /// <summary>
-        /// Get master view open width.
-        /// </summary>
-        /// <returns></returns>
-        double GetMasterOpenWidth()
-        {
-            return App.ScreenWidth * openFactor;
         }
 
         #endregion
+
+        /// <summary>
+        /// Update master detail page.
+        /// </summary>
+        void Update()
+        {
+            // If the master detail page is right aligned, the master has to be left aligned.
+            masterPage.IsLeftAligned = IsRightAligned;
+
+            if (IsMasterShown)
+            {
+                grabPage.TranslationX = GetOpenedGrabPageTranslation();
+                masterPage.TranslationX = GetOpenedMasterPageTranslation();
+            }
+            else
+            {
+                grabPage.TranslationX = GetClosedGrabPageTranslation();
+                masterPage.TranslationX = GetClosedMasterPageTranslation();
+            }
+        }
 
         protected override Page CreateDefault(object item)
         {

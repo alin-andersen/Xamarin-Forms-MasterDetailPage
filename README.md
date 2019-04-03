@@ -7,5 +7,5 @@ Not tested on iOS (because I don't have any Apple machines).
 
 # Milestones
 - [X] IsBusy and custom loader support
-- [ ] Right side support
+- [X] Right side support
 - [ ] Screen orientation support

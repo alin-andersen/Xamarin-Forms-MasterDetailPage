@@ -23,13 +23,36 @@ namespace App2
         private static void OnMasterViewWidthPropertyChanged(BindableObject bindable, object oldValue, object newValue)
         {
             var masterPage = (MasterPage)bindable;
-            masterPage.masterColumnDefinition.Width = (double)newValue;
+            masterPage.Update();
         }
 
         public double MasterViewWidth
         {
             get => (double)GetValue(MasterViewWidthProperty);
             set => SetValue(MasterViewWidthProperty, value);
+        }
+
+        #endregion
+
+        #region IsLeftAlignedProperty
+
+        public static readonly BindableProperty IsLeftAlignedProperty = BindableProperty.Create(
+            nameof(IsLeftAligned),
+            typeof(bool),
+            typeof(MasterPage),
+            false,
+            propertyChanged: OnIsLeftAlignedPropertyChanged);
+
+        static void OnIsLeftAlignedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var masterPage = (MasterPage)bindable;
+            masterPage.Update();
+        }
+
+        public bool IsLeftAligned
+        {
+            get => (bool)GetValue(IsLeftAlignedProperty);
+            set => SetValue(IsLeftAlignedProperty, value);
         }
 
         #endregion
@@ -41,9 +64,27 @@ namespace App2
         public MasterPage(View masterView)
 		{
 			InitializeComponent();
-
-            masterColumnDefinition.Width = MasterViewWidth;
-            masterViewContainer.Children.Add(masterView);
+            masterViewHolder.Content = masterView;
+            Update();
 		}
+
+        /// <summary>
+        /// Update master page.
+        /// </summary>
+        void Update()
+        {
+            if(IsLeftAligned)
+            {
+                leftColumnDefinition.Width = 0;
+                centerColumnDefinition.Width = MasterViewWidth;
+                rightColumnDefinition.Width = GridLength.Star;
+            }
+            else
+            {
+                leftColumnDefinition.Width = GridLength.Star;
+                centerColumnDefinition.Width = MasterViewWidth;
+                rightColumnDefinition.Width = 0;
+            }
+        }
 	}
 }

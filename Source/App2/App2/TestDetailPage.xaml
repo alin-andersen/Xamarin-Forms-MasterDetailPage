@@ -26,6 +26,11 @@
                     HorizontalOptions="CenterAndExpand"/>
 
             <Button TextColor="White" 
+                    Text="Toggle side" 
+                    Command="{Binding OnToggleSideCommand}"
+                    HorizontalOptions="CenterAndExpand"/>
+            
+            <Button TextColor="White" 
                     Text="Show loader for 3 seconds ..." 
                     Command="{Binding OnShowLoader}"
                     HorizontalOptions="CenterAndExpand"/>

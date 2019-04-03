@@ -4,12 +4,12 @@
              x:Class="App2.MasterPage">
     <!-- This grid contains the master view. The colume is set accordning to
          the screen size and the specified open factor. -->
-    <Grid >
+    <Grid ColumnSpacing="0" Padding="0" Margin="0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition x:Name="masterColumnDefinition" Width="*"/>
+            <ColumnDefinition x:Name="leftColumnDefinition" Width="0"/>
+            <ColumnDefinition x:Name="centerColumnDefinition" Width="*"/>
+            <ColumnDefinition x:Name="rightColumnDefinition" Width="0"/>
         </Grid.ColumnDefinitions>
-        <!-- Master view will be placed here. -->
-        <Grid Grid.Column="1" x:Name="masterViewContainer"/>
+        <ContentView Grid.Column="1" x:Name="masterViewHolder"/>
     </Grid>
 </ContentPage>
