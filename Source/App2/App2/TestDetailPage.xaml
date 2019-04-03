@@ -2,39 +2,77 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="App2.TestDetailPage"
-             BackgroundColor="Green">
+             BackgroundColor="{StaticResource DetailBackgroundColor}">
     <ContentPage.Content>
-        <StackLayout>
-            
-            <Label TextColor="White" 
-                   Text="Hi! I'm the detail page!"
-                   HorizontalOptions="Center"/>
+        <ScrollView>
+            <StackLayout Padding="10">
+                
+                <!-- Headline -->
+                <Label Text="DETAIL PAGE"
+                       TextColor="White" 
+                       FontSize="40"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"/>
 
-            <Button TextColor="White" 
-                    Text="Show master" 
-                    Command="{Binding OnShowMasterCommand}"
-                    HorizontalOptions="CenterAndExpand"/>
+                <!-- Buttons -->
+                <Grid ColumnSpacing="10" 
+                      RowSpacing="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <Button TextColor="White" 
-                    Text="Open new page" 
-                    Command="{Binding OnOpenOtherPageCommand}"
-                    HorizontalOptions="CenterAndExpand"/>
+                    <!-- Show master button -->
+                    <Button Grid.Row="0"
+                            Grid.ColumnSpan="2"
+                            TextColor="White" 
+                            Text="Show master" 
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding OnShowMasterCommand}"/>
 
-            <Button TextColor="White" 
-                    Text="Back" 
-                    Command="{Binding OnPopCommand}"
-                    HorizontalOptions="CenterAndExpand"/>
+                    <!-- Navigation buttons -->
 
-            <Button TextColor="White" 
-                    Text="Toggle side" 
-                    Command="{Binding OnToggleSideCommand}"
-                    HorizontalOptions="CenterAndExpand"/>
-            
-            <Button TextColor="White" 
-                    Text="Show loader for 3 seconds ..." 
-                    Command="{Binding OnShowLoader}"
-                    HorizontalOptions="CenterAndExpand"/>
+                    <Button Grid.Row="1" Grid.Column="0"
+                            TextColor="White" 
+                            Text="Push page"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding OnOpenOtherPageCommand}"/>
 
-        </StackLayout>
+                    <Button Grid.Row="1" Grid.Column="1" 
+                            TextColor="White" 
+                            Text="Pop page" 
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding OnPopCommand}"/>
+
+                    <!-- Toggle side button -->
+                    <Button Grid.Row="2" 
+                            Grid.Column="0" 
+                            TextColor="White" 
+                            Text="Toggle sides" 
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding OnToggleSideCommand}"/>
+
+                    <!-- Loader button -->
+                    <Button Grid.Row="2" 
+                            Grid.Column="1" 
+                            TextColor="White" 
+                            Text="Show loader" 
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding OnShowLoader}"/>
+
+                </Grid>
+            </StackLayout>
+        </ScrollView>
     </ContentPage.Content>
 </ContentPage>

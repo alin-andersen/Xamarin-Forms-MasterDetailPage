@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
@@ -28,6 +29,8 @@ namespace App2
         /// </summary>
         public ICommand OnShowLoader { get; }
 
+        public ICommand OnOpenOtherPageCommand { get; }
+
         public TestMasterViewModel()
         {
             OnShowDetailCommand = new Command(() =>
@@ -41,6 +44,11 @@ namespace App2
                 GetMasterDetailPage().IsBusy = true;
                 await Task.Delay(3000);
                 GetMasterDetailPage().IsBusy = false;
+            });
+
+            OnOpenOtherPageCommand = new Command(async () =>
+            {
+                await ((NavigationPage)GetMasterDetailPage().DetailPage).PushAsync(new TestDetailPage { Title = DateTime.UtcNow.ToLongTimeString() });
             });
         }
 

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="App2.App">
 	<Application.Resources>
-    
-	</Application.Resources>
+        <Color x:Key="MasterBackgroundColor">#f22b29</Color>
+        <Color x:Key="DetailBackgroundColor">#3f88c5</Color>
+    </Application.Resources>
 </Application>

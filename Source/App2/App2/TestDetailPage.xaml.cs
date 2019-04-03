@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
@@ -54,7 +55,7 @@ namespace App2
 
             OnOpenOtherPageCommand = new Command(async () =>
             {
-                await ((NavigationPage)GetMasterDetailPage().DetailPage).PushAsync(new TestDetailPage());
+                await ((NavigationPage)GetMasterDetailPage().DetailPage).PushAsync(new TestDetailPage { Title = DateTime.UtcNow.ToLongTimeString() });
             });
 
             OnPopCommand = new Command(async () =>
@@ -65,7 +66,7 @@ namespace App2
             OnShowLoader = new Command(async () =>
             {
                 GetMasterDetailPage().IsBusy = true;
-                await Task.Delay(3000);
+                await Task.Delay(2000);
                 GetMasterDetailPage().IsBusy = false;
             });
 

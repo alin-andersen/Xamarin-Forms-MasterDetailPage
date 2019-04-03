@@ -122,7 +122,9 @@ namespace App2
             this.loaderPage = loaderPage;
             HideLoader();
             this.openFactor = openFactor;
-            grabPage.BackgroundColor = new Color(1.0, 0.0, 0.0, 0.2);
+            
+            // Uncomment this to see the grab page.
+            //grabPage.BackgroundColor = new Color(1.0, 0.0, 0.0, 0.2);
 
             // Add pages to the multi-page (order matters!).
             Children.Add(detailPage);
@@ -135,9 +137,18 @@ namespace App2
             // Subscribe to touch events.
             PropertyChanged += OnPropertyChangedEventHandler;
             grabPage.GrabEvent += OnGrabEvent;
+            if(detailPage is NavigationPage navigationPage)
+            {
+                navigationPage.Pushed += OnPushed;
+            }
 
             // Update master detail page.
             Update();
+        }
+
+        void OnPushed(object sender, NavigationEventArgs e)
+        {
+            IsMasterShown = false;
         }
 
         /// <summary>
