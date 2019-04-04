@@ -2,7 +2,7 @@
 Alternative implementation for MasterDetailPage by Alin Andersen. Useable, but still in development.
 Not tested nor implemented on iOS (because I don't have any Apple machines).
 
-|-|-|-|
+|---|---|---|
 |![Example master view](Assets/MasterView.jpg)|![Example detail page](Assets/DetailPage.jpg)|![Example mix](Assets/MasterDetailMix.jpg)|
 
 # Video showcase
