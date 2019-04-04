@@ -294,8 +294,11 @@ namespace App2
         {
             lock (internalLock)
             {
-                if(loaderPage != null)
+                if (loaderPage != null)
+                {
+                    loaderPage.IsBusy = false;
                     loaderPage.TranslationX = 0;
+                }
             }
         }
 
@@ -307,13 +310,16 @@ namespace App2
             lock (internalLock)
             {
                 if (loaderPage != null)
+                {
+                    loaderPage.IsBusy = true;
                     loaderPage.TranslationX = App.ScreenWidth + 100.0;
+                }
             }
         }
 
         #endregion
 
-        #region Position helper methods
+        #region Positioning helper methods
 
         /// <summary>
         /// Get clipped translation value.
@@ -324,17 +330,15 @@ namespace App2
         {
             if(IsRightAligned)
             {
-                return Clip(
-                        translation,
-                        GetOpenedMasterPageTranslation(),  // Max value.
-                        GetClosedMasterPageTranslation()); // Min value.
+                return Clip(translation,
+                    GetOpenedMasterPageTranslation(),  // Max value.
+                    GetClosedMasterPageTranslation()); // Min value.
             }
             else
             {
-                return Clip(
-                        translation,
-                        GetClosedMasterPageTranslation(),  // Min value.
-                        GetOpenedMasterPageTranslation()); // Max value.
+                return Clip(translation,
+                    GetClosedMasterPageTranslation(),  // Min value.
+                    GetOpenedMasterPageTranslation()); // Max value.
             }
         }
 
