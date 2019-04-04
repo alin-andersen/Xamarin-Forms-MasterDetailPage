@@ -4,11 +4,11 @@ Not tested nor implemented on iOS (because I don't have any Apple machines).
 
 | First Header  | Second Header |
 | ------------- | ------------- |
-| ![Example master view](Assets/MasterView.jpg)  | Content Cell  |
+| ![Example master view](Assets/MasterView.jpg)  | ![Example detail page](Assets/DetailPage.jpg) |
 | Content Cell  | Content Cell  |
 
 |---|---|---|
-||![Example detail page](Assets/DetailPage.jpg)|![Example mix](Assets/MasterDetailMix.jpg)|
+|||![Example mix](Assets/MasterDetailMix.jpg)|
 
 # Video showcase
 [![Video](https://youtu.be/ON48mqDQPs4)](https://youtu.be/ON48mqDQPs4)
